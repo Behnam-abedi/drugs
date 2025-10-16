@@ -1,16 +1,27 @@
 /**
  * Negin Drug Search Application
- * Final Version: Includes Preloader, Live Search, Delete/Clear Buttons, and UI Animations.
+ * Final Version: Includes Delayed Preloader, Content Animation, Live Search, Delete/Clear Buttons, and UI Animations.
  */
 
 // --- Page Preloader Logic ---
-// This runs as soon as the window's resources are fully loaded.
+// This runs when the window's resources are fully loaded.
 window.onload = () => {
     const preloader = document.getElementById('preloader');
-    if (preloader) {
-        // Adding this class triggers the CSS animations defined in the HTML file.
-        preloader.classList.add('preloader-hidden');
-    }
+    const mainContent = document.getElementById('main-content'); // Get the main content container
+
+    // A short delay (e.g., 500ms) is created before the animation starts.
+    setTimeout(() => {
+        if (preloader) {
+            // This class triggers the CSS animations for the preloader gates.
+            preloader.classList.add('preloader-hidden');
+        }
+        
+        // This activates the fade-in and slide-up animation for the main content.
+        if (mainContent) {
+            mainContent.style.opacity = '1';
+            mainContent.style.transform = 'translateY(0)';
+        }
+    }, 2000); // 500 millisecond delay
 };
 
 // --- Main Application Logic ---
