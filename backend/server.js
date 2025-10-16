@@ -3,15 +3,24 @@
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
+const path = require('path'); // <-- این ماژول را اضافه کنید
 
 const app = express();
-const PORT = 3000; // سرور ما روی این پورت اجرا می‌شود
+const PORT = process.env.PORT || 3000; // <-- برای سازگاری با لیارا، از process.env.PORT استفاده کنید
 
-// استفاده از CORS برای اجازه دادن به فرانت‌اند که با این سرور ارتباط برقرار کند
 app.use(cors());
+
+// --- بخش جدید برای سرو کردن فرانت‌اند ---
+// مسیر پوشه frontend را مشخص می‌کنیم
+const frontendPath = path.join(__dirname, '..', 'frontend');
+// به اکسپرس می‌گوییم که این پوشه را به عنوان فایل‌های استاتیک سرو کند
+app.use(express.static(frontendPath));
+// -----------------------------------------
+
 
 // اندپوینت برای گرفتن لیست پیشنهادی داروها
 app.get('/api/autocomplete', async (req, res) => {
+    // ... محتوای این بخش بدون تغییر باقی می‌ماند
     const { s } = req.query;
     if (!s) {
         return res.status(400).send({ error: 'Search query "s" is required.' });
@@ -30,6 +39,7 @@ app.get('/api/autocomplete', async (req, res) => {
 
 // اندپوینت برای دریافت درخواست تداخل دارویی
 app.get('/api/check-interactions', async (req, res) => {
+    // ... محتوای این بخش بدون تغییر باقی می‌ماند
     const { drug_list } = req.query;
 
     if (!drug_list) {

@@ -1,5 +1,5 @@
 /**
- * Negin Drug Search Application (v5.0 - Final Clean Render Version)
+ * Negin Drug Search Application (v5.0 - Final Liara Deployment Version)
  */
 
 window.onload = () => {
@@ -36,7 +36,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let state = { selectedDrugs: [] };
 
     const fetchFromApi = async (query) => {
-        const proxyUrl = `http://localhost:3000/api/autocomplete?s=${encodeURIComponent(query)}`;
+        // *** تغییر برای لیارا: استفاده از آدرس نسبی ***
+        const proxyUrl = `/api/autocomplete?s=${encodeURIComponent(query)}`;
         try {
             const response = await fetch(proxyUrl);
             if (!response.ok) throw new Error('Network response was not ok');
@@ -52,14 +53,15 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const fetchInteractionData = async (drugListParam) => {
-        const proxyUrl = `http://localhost:3000/api/check-interactions?drug_list=${drugListParam}`;
+        // *** تغییر برای لیارا: استفاده از آدرس نسبی ***
+        const proxyUrl = `/api/check-interactions?drug_list=${drugListParam}`;
         try {
             const response = await fetch(proxyUrl);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             return await response.text();
         } catch (error) {
             console.error("CRITICAL: Interaction check failed.", error);
-            return `<p class="text-red-400">Error: Could not connect to the backend server. Is it running? Details: ${error.message}</p>`;
+            return `Error: Could not connect to the backend server. Is it running? Details: ${error.message}`;
         }
     };
 
@@ -120,41 +122,9 @@ document.addEventListener('DOMContentLoaded', () => {
         submitButton.disabled = state.selectedDrugs.length < 2;
     };
     
-    // *** راه‌حل نهایی با منطق هوشمندانه شما ***
+    // *** راه‌حل نهایی و صحیح: بازگشت به منطق امن ورژن قبلی شما ***
     const renderInteractionResults = (htmlContent) => {
-        const startComment = 'Content start';
-        const endComment = 'Content end';
-
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(htmlContent, 'text/html');
-
-        const walker = document.createTreeWalker(doc.body, NodeFilter.SHOW_COMMENT, null, false);
-        
-        let isInside = false;
-        let contentFragment = document.createDocumentFragment();
-
-        let currentNode = walker.nextNode();
-        while (currentNode) {
-            if (currentNode.nodeValue.trim() === startComment) {
-                isInside = true;
-                // حرکت به نود بعدی برای شروع جمع‌آوری
-                let nextNode = currentNode.nextSibling; 
-                while(nextNode) {
-                    if (nextNode.nodeType === Node.COMMENT_NODE && nextNode.nodeValue.trim() === endComment) {
-                        isInside = false;
-                        break;
-                    }
-                    // کلون کردن نود برای جلوگیری از مشکلات مالکیت
-                    contentFragment.appendChild(nextNode.cloneNode(true));
-                    nextNode = nextNode.nextSibling;
-                }
-                break; // از حلقه اصلی خارج می‌شویم چون کارمان تمام است
-            }
-            currentNode = walker.nextNode();
-        }
-
-        resultsContent.innerHTML = ''; // پاک کردن محتوای قبلی
-        resultsContent.appendChild(contentFragment);
+        resultsContent.textContent = htmlContent; // نمایش محتوا به عنوان متن ساده برای جلوگیری از اجرای اسکریپت
         resultsModal.classList.remove('hidden');
     };
 
@@ -205,8 +175,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     const handleSubmit = async (event) => {
-        event.preventDefault(); 
+        event.preventDefault(); // جلوگیری از رفتار پیش‌فرض دکمه
         
+        if (submitButton.disabled) {
+            return;
+        }
+
         submitButtonText.textContent = 'Checking...';
         submitSpinner.classList.remove('hidden');
         submitButton.disabled = true;
@@ -227,7 +201,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const debouncedSearchHandler = debounce(handleSearchInput, 300);
     searchInput.addEventListener('input', debouncedSearchHandler);
 
-    clearSearchButton.addEventListener('click', () => {
+    clearSearchButton.addEventListener('click', (event) => {
+        event.preventDefault();
         searchInput.value = '';
         renderSuggestions([]);
         clearSearchButton.classList.add('hidden');
@@ -242,9 +217,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     submitButton.addEventListener('click', handleSubmit);
     
-    closeModalButton.addEventListener('click', () => {
+    closeModalButton.addEventListener('click', (event) => {
+        event.preventDefault();
         resultsModal.classList.add('hidden');
-        resultsContent.innerHTML = ''; // خالی کردن محتوا هنگام بستن
+        resultsContent.textContent = ''; // خالی کردن محتوا هنگام بستن
     });
 
     renderSelectedDrugs();
