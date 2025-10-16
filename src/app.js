@@ -1,35 +1,42 @@
 /**
  * Negin Drug Search Application
- * Final Version: Includes Delayed Preloader, Content Animation, Live Search, Delete/Clear Buttons, and UI Animations.
+ * Final Version: Includes Staggered Animations, Preloader, Live Search, Delete/Clear Buttons, and UI Animations.
  */
 
 // --- Page Preloader Logic ---
-// This runs when the window's resources are fully loaded.
+// This runs when the window's resources (images, etc.) are fully loaded.
 window.onload = () => {
     const preloader = document.getElementById('preloader');
-    const mainContent = document.getElementById('main-content'); // Get the main content container
-
-    // A short delay (e.g., 500ms) is created before the animation starts.
+    
+    // Initial delay to ensure the preloader is visible for a moment.
     setTimeout(() => {
         if (preloader) {
-            // This class triggers the CSS animations for the preloader gates.
+            // This class triggers the CSS animations for the preloader gates to open.
             preloader.classList.add('preloader-hidden');
         }
-        
-        // This activates the fade-in and slide-up animation for the main content.
-        if (mainContent) {
-            mainContent.style.opacity = '1';
-            mainContent.style.transform = 'translateY(0)';
-        }
-    }, 2000); // 500 millisecond delay
+
+        // --- Staggered Animation Logic ---
+        // This finds all elements meant to be animated and fades them in one by one.
+        const elementsToAnimate = document.querySelectorAll('.animate-on-load');
+        const staggerDelay = 200; // 200ms delay between each element's animation.
+
+        elementsToAnimate.forEach((element, index) => {
+            // The delay for each element is its order (index) multiplied by the stagger delay.
+            setTimeout(() => {
+                element.style.opacity = '1';
+                element.style.transform = 'translateY(0)';
+            }, index * staggerDelay);
+        });
+
+    }, 500); // You can change this value (in ms) to make the preloader show longer.
 };
 
+
 // --- Main Application Logic ---
-// This runs after the basic HTML structure is ready.
+// This runs after the basic HTML document structure is ready.
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- 1. DOM Element Selection ---
-    // All elements we need to interact with are gathered here.
     const searchInput = document.getElementById('search-input');
     const suggestionsContainer = document.getElementById('suggestions-container');
     const selectedDrugsList = document.getElementById('selected-drugs-list');
@@ -38,13 +45,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const clearSearchButton = document.getElementById('clear-search-button');
 
     // --- 2. Application State ---
-    // A single source of truth for our application's data.
     let state = {
         selectedDrugs: [],
     };
 
     // --- 3. API Communication ---
-    // Handles fetching data from the external API.
     const fetchFromApi = async (query) => {
         const encodedQuery = encodeURIComponent(query);
         const url = `https://www.drugs.com/api/autocomplete/?type=interaction&s=${encodedQuery}`;
@@ -52,7 +57,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(url);
             if (!response.ok) throw new Error(`Network response was not ok`);
             const data = await response.json();
-            // Correctly parse the API response structure
             if (data.categories && data.categories.length > 0) {
                 return data.categories[0].results || [];
             }
@@ -64,7 +68,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- 4. Utility Functions ---
-    // Reusable helper functions.
     const debounce = (func, delay) => {
         let timeoutId;
         return (...args) => {
@@ -74,7 +77,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- 5. Rendering Functions ---
-    // These functions are responsible for updating the UI based on the state.
     const renderSuggestions = (suggestions) => {
         suggestionsContainer.innerHTML = '';
         if (!suggestions || suggestions.length === 0) {
@@ -124,7 +126,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- 6. Event Handlers ---
-    // Functions that respond to user interactions.
     const handleDeleteDrug = (suggestionToDelete) => {
         state.selectedDrugs = state.selectedDrugs.filter(drug => drug.suggestion !== suggestionToDelete);
         renderSelectedDrugs();
@@ -177,7 +178,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- 7. Initialization ---
-    // Setting up the initial event listeners when the app starts.
     const debouncedSearchHandler = debounce(handleSearchInput, 300);
     searchInput.addEventListener('input', debouncedSearchHandler);
 

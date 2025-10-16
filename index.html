@@ -7,37 +7,22 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
-        /* استایل‌های مربوط به انیمیشن لودینگ */
-        #preloader {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 9999; display: flex; align-items: center; justify-content: center;
-            overflow: hidden; transition: opacity 0.5s ease-in-out;
-        }
-        #preloader .brand-name {
-            font-size: 3rem; font-weight: bold; color: #2dd4bf;
-            animation: pulse 2s infinite ease-in-out; z-index: 10001;
-        }
-        .preloader-gate {
-            position: fixed; top: 0; width: 50%; height: 100%;
-            background-color: #111827; z-index: 10000;
-            transition: transform 1s cubic-bezier(0.77, 0, 0.175, 1);
-        }
+        /* ... استایل‌های preloader بدون تغییر ... */
+        #preloader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; display: flex; align-items: center; justify-content: center; overflow: hidden; transition: opacity 0.5s ease-in-out; }
+        #preloader .brand-name { font-size: 3rem; font-weight: bold; color: #2dd4bf; animation: pulse 2s infinite ease-in-out; z-index: 10001; }
+        .preloader-gate { position: fixed; top: 0; width: 50%; height: 100%; background-color: #111827; z-index: 10000; transition: transform 1s cubic-bezier(0.77, 0, 0.175, 1); }
         #preloader-gate-left { left: 0; }
         #preloader-gate-right { right: 0; }
         #preloader.preloader-hidden { opacity: 0; pointer-events: none; }
         #preloader.preloader-hidden #preloader-gate-left { transform: translateX(-100%); }
         #preloader.preloader-hidden #preloader-gate-right { transform: translateX(100%); }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.6; transform: scale(0.98); }
-        }
+        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(0.98); } }
 
-        /* انیمیشن برای ظاهر شدن محتوای اصلی */
-        #main-content {
-            opacity: 0;
+        /* تغییر جدید: استایل برای المان‌های با انیمیشن آبشاری */
+        .animate-on-load {
+            opacity: 0; /* در ابتدا همه المان‌ها شفاف هستند */
             transform: translateY(20px);
-            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
-            transition-delay: 0.5s;
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
         }
     </style>
 </head>
@@ -49,16 +34,14 @@
         <div class="brand-name">Negin</div>
     </div>
 
-    <div id="main-content" class="w-full max-w-2xl mx-auto">
+    <div class="w-full max-w-2xl mx-auto">
         
-        <h1 class="text-4xl font-bold text-center mb-6">
-            <span class="bg-gradient-to-r from-teal-400 to-cyan-500 text-transparent bg-clip-text">
-                Negin
-            </span>
+        <h1 class="text-4xl font-bold text-center mb-6 animate-on-load">
+            <span class="bg-gradient-to-r from-teal-400 to-cyan-500 text-transparent bg-clip-text">Negin</span>
             <span class="text-gray-400">Drug Interaction Search</span>
         </h1>
         
-        <div class="relative flex items-center">
+        <div class="relative flex items-center animate-on-load">
             <input 
                 type="text" 
                 id="search-input"
@@ -73,12 +56,10 @@
                 <div id="loading-indicator" class="w-5 h-5 border-2 border-gray-500 border-t-cyan-400 rounded-full animate-spin hidden"></div>
             </div>
             
-            <div id="suggestions-container" class="absolute z-10 top-full w-full mt-2 bg-gray-800 border border-gray-700 rounded-lg shadow-xl max-h-80 overflow-y-auto
-                opacity-0 -translate-y-2 pointer-events-none transition-all duration-300 ease-in-out">
-            </div>
+            <div id="suggestions-container" class="absolute z-10 top-full w-full mt-2 bg-gray-800 border border-gray-700 rounded-lg shadow-xl max-h-80 overflow-y-auto opacity-0 -translate-y-2 pointer-events-none transition-all duration-300 ease-in-out"></div>
         </div>
 
-        <div class="mt-12">
+        <div class="mt-12 animate-on-load">
             <h2 class="text-2xl font-semibold mb-4 border-b-2 border-gray-700 pb-2">Selected Drugs</h2>
             <ul id="selected-drugs-list" class="space-y-3">
                 <li id="no-selection-placeholder" class="text-gray-500">No drugs selected yet.</li>
