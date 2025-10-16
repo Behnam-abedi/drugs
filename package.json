@@ -1,0 +1,14 @@
+{
+  "name": "negin-drug-app-liara",
+  "version": "1.0.0",
+  "description": "Drug interaction checker application for Liara deployment",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js"
+  },
+  "dependencies": {
+    "axios": "^1.12.2",
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
+  }
+}

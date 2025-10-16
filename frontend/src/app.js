@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let state = { selectedDrugs: [] };
 
     const fetchFromApi = async (query) => {
-        // *** تغییر برای لیارا: استفاده از آدرس نسبی ***
+        // *** تغییر برای لیارا ***
         const proxyUrl = `/api/autocomplete?s=${encodeURIComponent(query)}`;
         try {
             const response = await fetch(proxyUrl);
@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const fetchInteractionData = async (drugListParam) => {
-        // *** تغییر برای لیارا: استفاده از آدرس نسبی ***
+        // *** تغییر برای لیارا ***
         const proxyUrl = `/api/check-interactions?drug_list=${drugListParam}`;
         try {
             const response = await fetch(proxyUrl);
@@ -122,9 +122,22 @@ document.addEventListener('DOMContentLoaded', () => {
         submitButton.disabled = state.selectedDrugs.length < 2;
     };
     
-    // *** راه‌حل نهایی و صحیح: بازگشت به منطق امن ورژن قبلی شما ***
+    // راه‌حل نهایی برای نمایش تمیز نتایج
     const renderInteractionResults = (htmlContent) => {
-        resultsContent.textContent = htmlContent; // نمایش محتوا به عنوان متن ساده برای جلوگیری از اجرای اسکریپت
+        const startComment = '';
+        const endComment = '';
+
+        const startIndex = htmlContent.indexOf(startComment);
+        const endIndex = htmlContent.indexOf(endComment);
+
+        if (startIndex !== -1 && endIndex !== -1) {
+            const cleanHtml = htmlContent.substring(startIndex + startComment.length, endIndex);
+            resultsContent.innerHTML = cleanHtml;
+        } else {
+            // اگر کامنت‌ها پیدا نشدند، محتوای خام را به صورت امن نمایش بده
+            resultsContent.textContent = htmlContent;
+        }
+        
         resultsModal.classList.remove('hidden');
     };
 
@@ -175,11 +188,9 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     const handleSubmit = async (event) => {
-        event.preventDefault(); // جلوگیری از رفتار پیش‌فرض دکمه
+        event.preventDefault(); 
         
-        if (submitButton.disabled) {
-            return;
-        }
+        if(submitButton.disabled) return;
 
         submitButtonText.textContent = 'Checking...';
         submitSpinner.classList.remove('hidden');
@@ -201,8 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const debouncedSearchHandler = debounce(handleSearchInput, 300);
     searchInput.addEventListener('input', debouncedSearchHandler);
 
-    clearSearchButton.addEventListener('click', (event) => {
-        event.preventDefault();
+    clearSearchButton.addEventListener('click', () => {
         searchInput.value = '';
         renderSuggestions([]);
         clearSearchButton.classList.add('hidden');
@@ -217,10 +227,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     submitButton.addEventListener('click', handleSubmit);
     
-    closeModalButton.addEventListener('click', (event) => {
-        event.preventDefault();
+    closeModalButton.addEventListener('click', () => {
         resultsModal.classList.add('hidden');
-        resultsContent.textContent = ''; // خالی کردن محتوا هنگام بستن
+        resultsContent.innerHTML = ''; // خالی کردن محتوا هنگام بستن
     });
 
     renderSelectedDrugs();
