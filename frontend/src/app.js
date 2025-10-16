@@ -1,5 +1,5 @@
 /**
- * Negin Drug Search Application (v5.1 - Final Content Parsing Fix)
+ * Negin Drug Search Application (v7.4 - Final Robust AI Parser)
  */
 
 window.onload = () => {
@@ -59,7 +59,42 @@ document.addEventListener('DOMContentLoaded', () => {
             return await response.text();
         } catch (error) {
             console.error("CRITICAL: Interaction check failed.", error);
-            return `Error: Could not connect to the backend server. Is it running? Details: ${error.message}`;
+            return `<p class="text-red-400">Error: Could not connect to the backend server. Details: ${error.message}</p>`;
+        }
+    };
+    
+    // *** تابع آپدیت شده و ضد خطا برای پارس کردن JSON از n8n ***
+    const getAISummary = async (reportText) => {
+        try {
+            const response = await fetch('/api/summarize', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reportText: reportText }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.text();
+                throw new Error(`Summary API Error: ${errorData}`);
+            }
+
+            const n8nResponse = await response.json();
+            
+            let jsonString;
+            // هوشمندانه چک می‌کنیم که پاسخ آرایه است یا آبجکت
+            if (Array.isArray(n8nResponse) && n8nResponse[0]?.content?.parts?.[0]?.text) {
+                jsonString = n8nResponse[0].content.parts[0].text;
+            } else if (n8nResponse.content?.parts?.[0]?.text) { // اگر آبجکت بود
+                jsonString = n8nResponse.content.parts[0].text;
+            } else {
+                throw new Error("Unexpected JSON structure from n8n.");
+            }
+            
+            // در نهایت، رشته را به یک آبجکت JSON واقعی تبدیل می‌کنیم
+            return JSON.parse(jsonString);
+
+        } catch (error) {
+            console.error("AI Summary fetch/parse problem:", error);
+            return null;
         }
     };
 
@@ -72,6 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const renderSuggestions = (suggestions) => {
+        // ... این بخش بدون تغییر است
         suggestionsContainer.innerHTML = '';
         if (!suggestions || suggestions.length === 0) {
             suggestionsContainer.classList.add('opacity-0', '-translate-y-2', 'pointer-events-none');
@@ -91,6 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const renderSelectedDrugs = () => {
+        // ... این بخش بدون تغییر است
         selectedDrugsList.innerHTML = '';
         if (state.selectedDrugs.length === 0) {
             selectedDrugsList.appendChild(noSelectionPlaceholder);
@@ -120,26 +157,75 @@ document.addEventListener('DOMContentLoaded', () => {
         submitButton.disabled = state.selectedDrugs.length < 2;
     };
     
-    // *** اصلاحیه نهایی و کلیدی اینجاست ***
-    const renderInteractionResults = (htmlContent) => {
-        // کامنت‌های شروع و پایان را به درستی تعریف می‌کنیم
-        const startComment = '';
-        const endComment = '';
-
-        const startIndex = htmlContent.indexOf(startComment);
-        const endIndex = htmlContent.indexOf(endComment);
-
-        // چک می‌کنیم که هر دو کامنت پیدا شده باشند
-        if (startIndex !== -1 && endIndex > startIndex) {
-            // محتوای بین دو کامنت را استخراج می‌کنیم
-            const cleanHtml = htmlContent.substring(startIndex + startComment.length, endIndex);
-            resultsContent.innerHTML = cleanHtml;
-        } else {
-            // اگر کامنت‌ها پیدا نشدند، یک پیام خطا یا محتوای خام را نمایش می‌دهیم
-            resultsContent.textContent = "Could not parse the results. Showing raw data:\n\n" + htmlContent;
-        }
-        
+    // تابع برای نمایش حالت انتظار AI
+    const showAILoadingState = () => {
+        resultsContent.innerHTML = `
+            <div class="flex flex-col items-center justify-center text-center text-gray-400 h-full">
+                <div class="w-8 h-8 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p class="text-lg font-semibold">AI is analyzing the report...</p>
+                <p class="text-sm">This may take a few moments.</p>
+            </div>
+        `;
         resultsModal.classList.remove('hidden');
+    };
+
+    // تابع نمایش نتیجه نهایی (جدول)
+    const renderInteractionResults = (summaryJson) => {
+        resultsContent.innerHTML = ''; 
+
+        if (!summaryJson) {
+            resultsContent.innerHTML = `<p class="text-red-400">An error occurred while generating the AI summary. Please check the browser console for details.</p>`;
+            return;
+        }
+
+        const severityColors = {
+            "Major": "bg-red-600",
+            "Moderate": "bg-orange-500",
+            "Minor": "bg-yellow-500",
+            "None": "bg-green-500"
+        };
+        const severityColor = severityColors[summaryJson.highest_severity_level] || "bg-gray-500";
+        
+        const tableHtml = `
+            <div class="space-y-4 text-gray-200">
+                <div class="bg-gray-700 p-4 rounded-lg">
+                    <h3 class="text-lg font-bold text-teal-400 mb-2">Clinical Summary</h3>
+                    <p>${summaryJson.clinical_summary || "N/A"}</p>
+                </div>
+
+                <div class="bg-gray-700 p-4 rounded-lg">
+                    <h3 class="text-lg font-bold text-teal-400 mb-2">Pharmacist Recommendation</h3>
+                    <p class="font-mono text-lg">${summaryJson.pharmacist_recommendation || "N/A"}</p>
+                </div>
+                
+                <table class="w-full text-left table-auto border-collapse">
+                    <tbody>
+                        <tr class="border-b border-gray-600">
+                            <td class="py-3 px-4 font-semibold text-gray-400 w-1/3">Overall Interaction</td>
+                            <td class="py-3 px-4">${summaryJson.overall_interaction === 'Yes' ? 'Yes, interactions found' : 'No significant interactions'}</td>
+                        </tr>
+                        <tr class="border-b border-gray-600">
+                            <td class="py-3 px-4 font-semibold text-gray-400">Highest Severity</td>
+                            <td class="py-3 px-4">
+                                <span class="px-3 py-1 text-sm font-bold text-white rounded-full ${severityColor}">
+                                    ${summaryJson.highest_severity_level || "N/A"}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr class="border-b border-gray-600">
+                            <td class="py-3 px-4 font-semibold text-gray-400">Affected Drugs</td>
+                            <td class="py-3 px-4">${(summaryJson.affected_drugs || []).join(', ') || "N/A"}</td>
+                        </tr>
+                        <tr>
+                            <td class="py-3 px-4 font-semibold text-gray-400">Interaction Types</td>
+                            <td class="py-3 px-4">${(summaryJson.interaction_types || []).join(', ') || "N/A"}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        resultsContent.innerHTML = tableHtml;
     };
 
     const handleDeleteDrug = (suggestionToDelete) => {
@@ -168,15 +254,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const handleSearchInput = async (event) => {
         const query = event.target.value.trim();
         clearSearchButton.classList.toggle('hidden', query.length === 0);
-
         if (query.length < 1) {
             renderSuggestions([]);
             return;
         }
-        
         loadingIndicator.classList.remove('hidden');
         clearSearchButton.classList.add('hidden');
-        
         try {
             const results = await fetchFromApi(query);
             renderSuggestions(results);
@@ -190,20 +273,37 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const handleSubmit = async (event) => {
         event.preventDefault(); 
-        
         if(submitButton.disabled) return;
 
         submitButtonText.textContent = 'Checking...';
         submitSpinner.classList.remove('hidden');
         submitButton.disabled = true;
 
-        const drugListParam = state.selectedDrugs
-            .map(drug => `${drug.ddc_id}-${drug.brand_name_id}`)
-            .join(',');
-
-        const resultHtml = await fetchInteractionData(drugListParam);
+        const drugListParam = state.selectedDrugs.map(drug => `${drug.ddc_id}-${drug.brand_name_id}`).join(',');
+        const rawHtml = await fetchInteractionData(drugListParam);
         
-        renderInteractionResults(resultHtml);
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(rawHtml, "text/html");
+        const mainContent = doc.querySelector("#content");
+        
+        if (!mainContent) {
+            resultsContent.innerHTML = `<p class="text-red-400">Error: Could not find the main content in the report.</p>`;
+            resultsModal.classList.remove('hidden');
+            submitButtonText.textContent = 'Check Interactions';
+            submitSpinner.classList.add('hidden');
+            updateSubmitButtonState();
+            return;
+        }
+        
+        const cleanText = mainContent.innerText;
+        
+        submitButtonText.textContent = 'Analyzing with AI...';
+        
+        showAILoadingState();
+
+        const summaryJson = await getAISummary(cleanText);
+
+        renderInteractionResults(summaryJson);
         
         submitButtonText.textContent = 'Check Interactions';
         submitSpinner.classList.add('hidden');
