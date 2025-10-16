@@ -1,5 +1,5 @@
 /**
- * Negin Drug Search Application (v5.0 - Final Liara Deployment Version)
+ * Negin Drug Search Application (v5.1 - Final Content Parsing Fix)
  */
 
 window.onload = () => {
@@ -36,7 +36,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let state = { selectedDrugs: [] };
 
     const fetchFromApi = async (query) => {
-        // *** تغییر برای لیارا ***
         const proxyUrl = `/api/autocomplete?s=${encodeURIComponent(query)}`;
         try {
             const response = await fetch(proxyUrl);
@@ -53,7 +52,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const fetchInteractionData = async (drugListParam) => {
-        // *** تغییر برای لیارا ***
         const proxyUrl = `/api/check-interactions?drug_list=${drugListParam}`;
         try {
             const response = await fetch(proxyUrl);
@@ -122,20 +120,23 @@ document.addEventListener('DOMContentLoaded', () => {
         submitButton.disabled = state.selectedDrugs.length < 2;
     };
     
-    // راه‌حل نهایی برای نمایش تمیز نتایج
+    // *** اصلاحیه نهایی و کلیدی اینجاست ***
     const renderInteractionResults = (htmlContent) => {
+        // کامنت‌های شروع و پایان را به درستی تعریف می‌کنیم
         const startComment = '';
         const endComment = '';
 
         const startIndex = htmlContent.indexOf(startComment);
         const endIndex = htmlContent.indexOf(endComment);
 
-        if (startIndex !== -1 && endIndex !== -1) {
+        // چک می‌کنیم که هر دو کامنت پیدا شده باشند
+        if (startIndex !== -1 && endIndex > startIndex) {
+            // محتوای بین دو کامنت را استخراج می‌کنیم
             const cleanHtml = htmlContent.substring(startIndex + startComment.length, endIndex);
             resultsContent.innerHTML = cleanHtml;
         } else {
-            // اگر کامنت‌ها پیدا نشدند، محتوای خام را به صورت امن نمایش بده
-            resultsContent.textContent = htmlContent;
+            // اگر کامنت‌ها پیدا نشدند، یک پیام خطا یا محتوای خام را نمایش می‌دهیم
+            resultsContent.textContent = "Could not parse the results. Showing raw data:\n\n" + htmlContent;
         }
         
         resultsModal.classList.remove('hidden');
@@ -229,7 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     closeModalButton.addEventListener('click', () => {
         resultsModal.classList.add('hidden');
-        resultsContent.innerHTML = ''; // خالی کردن محتوا هنگام بستن
+        resultsContent.innerHTML = '';
     });
 
     renderSelectedDrugs();
